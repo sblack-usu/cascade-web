@@ -521,7 +521,18 @@ function applyArrowPosition() {
 }
 
 function applyArrowScale() {
-  boardEl.style.setProperty("--triangle-scale", String(state.arrowScale));
+  const tileSize = Math.max(1, state.lockedTileSize || 120);
+  const arrowBodyScale = Math.max(0.62, Math.min(0.9, 0.76 + (state.arrowScale - 2.15) * 0.11));
+  const arrowHeadScale = Math.max(0.55, Math.min(1.2, 0.84 + (state.arrowScale - 2.15) * 0.12));
+  const dirSize = Math.round(tileSize * arrowBodyScale);
+  const dirForward = Math.round(tileSize * 0.34);
+  const headHeight = Math.max(4, Math.round(tileSize * 0.11 * arrowHeadScale));
+  const headWidth = Math.max(6, Math.round(tileSize * 0.18 * arrowHeadScale));
+
+  boardEl.style.setProperty("--dir-size", `${dirSize}px`);
+  boardEl.style.setProperty("--dir-forward", `${dirForward}px`);
+  boardEl.style.setProperty("--dir-head-height", `${headHeight}px`);
+  boardEl.style.setProperty("--dir-head-width", `${headWidth}px`);
   if (arrowScaleValueEl) {
     arrowScaleValueEl.textContent = `${state.arrowScale.toFixed(2)}x`;
   }
@@ -1334,6 +1345,8 @@ function renderBoard() {
   } else {
     boardEl.classList.add("grid-regular");
   }
+
+  applyArrowScale();
 
   const frag = document.createDocumentFragment();
   for (const cell of state.board) {

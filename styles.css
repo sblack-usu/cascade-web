@@ -483,21 +483,21 @@ button {
 .direction {
   left: 50%;
   top: 50%;
-  width: calc(86% * var(--dir-scale));
-  height: calc(86% * var(--dir-scale));
+  width: var(--dir-size, 86%);
+  height: var(--dir-size, 86%);
   z-index: 2;
   transform: translate(-50%, -50%) rotate(var(--dir-angle, 0deg));
   transition: opacity 120ms ease;
 }
 
 .board.grid-compact .direction {
-  width: calc(76% * var(--dir-scale));
-  height: calc(76% * var(--dir-scale));
+  width: calc(var(--dir-size, 86%) * 0.9);
+  height: calc(var(--dir-size, 86%) * 0.9);
 }
 
 .board.grid-dense .direction {
-  width: calc(68% * var(--dir-scale));
-  height: calc(68% * var(--dir-scale));
+  width: calc(var(--dir-size, 86%) * 0.84);
+  height: calc(var(--dir-size, 86%) * 0.84);
 }
 
 .board-stage.show-lines .direction {
@@ -517,19 +517,17 @@ button {
   position: absolute;
   left: calc(50% + var(--dir-forward));
   top: 50%;
-  transform: translate(-50%, -50%) scale(var(--triangle-scale));
+  transform: translate(-50%, -50%);
   transform-origin: center;
   width: 0;
   height: 0;
-  border-top: 0.36rem solid transparent;
-  border-bottom: 0.36rem solid transparent;
-  border-left: 0.72rem solid #1e4f67;
+  border-top: var(--dir-head-height, 0.36rem) solid transparent;
+  border-bottom: var(--dir-head-height, 0.36rem) solid transparent;
+  border-left: var(--dir-head-width, 0.72rem) solid #1e4f67;
 }
 
 .board.grid-dense .direction::after {
-  border-top-width: 0.3rem;
-  border-bottom-width: 0.3rem;
-  border-left-width: 0.5rem;
+  filter: saturate(0.98);
 }
 
 .direction.sink {
