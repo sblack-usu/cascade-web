@@ -12,7 +12,7 @@ const state = {
   bounceStrength: 2,
   tileDelay: 55,
   rotationDirection: "cw",
-  useRotationIcons: true,
+  useRotationIcons: false,
   useFlowSound: true,
   showRotatableHints: false,
   lastPointerClientX: null,
