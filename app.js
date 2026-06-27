@@ -4,7 +4,7 @@ const state = {
   viewMode: "arrows",
   hideBaseAndMatchedCurrent: true,
   showCurrentValueBadge: false,
-  markerScale: 50,
+  arrowPosition: 50,
   arrowShift: 3,
   currentValueScale: 2,
   lockedTileSize: null,
@@ -22,8 +22,8 @@ const newGameBtn = document.getElementById("newGameBtn");
 const valueBadgeToggleBtn = document.getElementById("valueBadgeToggleBtn");
 const numberModeToggleBtn = document.getElementById("numberModeToggleBtn");
 const viewToggleBtn = document.getElementById("viewToggleBtn");
-const markerScaleSliderEl = document.getElementById("markerScaleSlider");
-const markerScaleValueEl = document.getElementById("markerScaleValue");
+const arrowPositionSliderEl = document.getElementById("arrowPositionSlider");
+const arrowPositionValueEl = document.getElementById("arrowPositionValue");
 const arrowShiftSliderEl = document.getElementById("arrowShiftSlider");
 const arrowShiftValueEl = document.getElementById("arrowShiftValue");
 const currentValueScaleSliderEl = document.getElementById("currentValueScaleSlider");
@@ -50,13 +50,13 @@ function applyValueBadgeMode() {
     : "Value Badge: Off";
 }
 
-function applyMarkerScale() {
-  boardEl.style.setProperty("--dir-forward", `${state.markerScale}%`);
-  if (markerScaleValueEl) {
-    markerScaleValueEl.textContent = `${state.markerScale}%`;
+function applyArrowPosition() {
+  boardEl.style.setProperty("--dir-forward", `${state.arrowPosition}%`);
+  if (arrowPositionValueEl) {
+    arrowPositionValueEl.textContent = `${state.arrowPosition}%`;
   }
-  if (markerScaleSliderEl) {
-    markerScaleSliderEl.value = String(state.markerScale);
+  if (arrowPositionSliderEl) {
+    arrowPositionSliderEl.value = String(state.arrowPosition);
   }
 }
 
@@ -141,10 +141,10 @@ if (valueBadgeToggleBtn) {
   });
 }
 
-if (markerScaleSliderEl) {
-  markerScaleSliderEl.addEventListener("input", () => {
-    state.markerScale = Number(markerScaleSliderEl.value);
-    applyMarkerScale();
+if (arrowPositionSliderEl) {
+  arrowPositionSliderEl.addEventListener("input", () => {
+    state.arrowPosition = Number(arrowPositionSliderEl.value);
+    applyArrowPosition();
   });
 }
 
@@ -553,7 +553,7 @@ function renderBoard() {
 }
 
 startNewPuzzle(state.cols, state.rows);
-applyMarkerScale();
+applyArrowPosition();
 applyArrowShift();
 applyCurrentValueScale();
 applyNumberMode();
