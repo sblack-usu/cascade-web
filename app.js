@@ -2,6 +2,7 @@ const state = {
   cols: 6,
   rows: 6,
   viewMode: "arrows",
+  hideBaseAndMatchedCurrent: false,
   markerScale: 34,
   arrowShift: 1,
   board: [],
@@ -15,6 +16,7 @@ const linkOverlayEl = document.getElementById("linkOverlay");
 const statusTextEl = document.getElementById("statusText");
 const movesTextEl = document.getElementById("movesText");
 const newGameBtn = document.getElementById("newGameBtn");
+const numberModeToggleBtn = document.getElementById("numberModeToggleBtn");
 const viewToggleBtn = document.getElementById("viewToggleBtn");
 const markerScaleSliderEl = document.getElementById("markerScaleSlider");
 const markerScaleValueEl = document.getElementById("markerScaleValue");
@@ -22,6 +24,15 @@ const arrowShiftSliderEl = document.getElementById("arrowShiftSlider");
 const arrowShiftValueEl = document.getElementById("arrowShiftValue");
 const sizeSelect = document.getElementById("sizeSelect");
 const DIR_DEGREES = [0, -45, -90, -135, 180, 135, 90, 45];
+
+function applyNumberMode() {
+  if (!numberModeToggleBtn) {
+    return;
+  }
+  numberModeToggleBtn.textContent = state.hideBaseAndMatchedCurrent
+    ? "Number Mode: Minimal"
+    : "Number Mode: Standard";
+}
 
 function applyMarkerScale() {
   boardEl.style.setProperty("--dir-forward", `${state.markerScale}%`);
@@ -86,6 +97,14 @@ if (viewToggleBtn) {
   viewToggleBtn.addEventListener("click", () => {
     state.viewMode = state.viewMode === "arrows" ? "lines" : "arrows";
     applyViewMode();
+  });
+}
+
+if (numberModeToggleBtn) {
+  numberModeToggleBtn.addEventListener("click", () => {
+    state.hideBaseAndMatchedCurrent = !state.hideBaseAndMatchedCurrent;
+    applyNumberMode();
+    renderBoard();
   });
 }
 
@@ -444,6 +463,9 @@ function renderBoard() {
     const base = document.createElement("span");
     base.className = "base";
     base.textContent = `b:${cell.baseFlow}`;
+    if (state.hideBaseAndMatchedCurrent) {
+      base.style.display = "none";
+    }
 
     const current = document.createElement("span");
     current.className = "current";
@@ -452,6 +474,9 @@ function renderBoard() {
     const target = document.createElement("span");
     target.className = "target";
     target.textContent = `t:${cell.targetAccum}`;
+    if (state.hideBaseAndMatchedCurrent && cell.currentAccum === cell.targetAccum) {
+      target.style.visibility = "hidden";
+    }
 
     const direction = document.createElement("span");
     direction.className = "direction";
@@ -473,5 +498,6 @@ function renderBoard() {
 startNewPuzzle(state.cols, state.rows);
 applyMarkerScale();
 applyArrowShift();
+applyNumberMode();
 applyViewMode();
 window.addEventListener("resize", buildLinkOverlay);
