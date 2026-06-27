@@ -457,6 +457,62 @@ function followDirection(cols, rows, index, dir) {
   return indexFromXY(cols, nx, ny);
 }
 
+function wouldCreateCycle(board, startIndex, candidateDir) {
+  const nextIndex = followDirection(state.cols, state.rows, startIndex, candidateDir);
+  if (nextIndex === startIndex) {
+    return true;
+  }
+
+  const visited = new Set([startIndex]);
+  let currentIndex = nextIndex;
+
+  while (true) {
+    if (currentIndex === startIndex) {
+      return true;
+    }
+    if (visited.has(currentIndex)) {
+      return false;
+    }
+    visited.add(currentIndex);
+
+    const cell = board[currentIndex];
+    if (!cell || cell.currentDir === null) {
+      return false;
+    }
+
+    const downstreamIndex = followDirection(state.cols, state.rows, currentIndex, cell.currentDir);
+    if (downstreamIndex === currentIndex) {
+      return false;
+    }
+    currentIndex = downstreamIndex;
+  }
+}
+
+function shuffledDirections() {
+  const dirs = [0, 1, 2, 3, 4, 5, 6, 7];
+  for (let i = dirs.length - 1; i > 0; i -= 1) {
+    const swapIndex = Math.floor(Math.random() * (i + 1));
+    [dirs[i], dirs[swapIndex]] = [dirs[swapIndex], dirs[i]];
+  }
+  return dirs;
+}
+
+function findNextValidDirection(board, cellIndex, currentDir, excludedDir = null) {
+  for (let offset = 1; offset <= 8; offset += 1) {
+    const candidateDir = (currentDir + offset) % 8;
+    if (candidateDir === excludedDir) {
+      continue;
+    }
+    if (followDirection(state.cols, state.rows, cellIndex, candidateDir) === cellIndex) {
+      continue;
+    }
+    if (!wouldCreateCycle(board, cellIndex, candidateDir)) {
+      return candidateDir;
+    }
+  }
+  return currentDir;
+}
+
 function buildLinkOverlay() {
   if (!linkOverlayEl || !boardStageEl) {
     return;
@@ -574,13 +630,35 @@ function accumulate(board, useSolution) {
 }
 
 function scrambleDirections(board) {
-  for (const cell of board) {
+  const order = board.map((cell) => cell.index);
+  for (let i = order.length - 1; i > 0; i -= 1) {
+    const swapIndex = Math.floor(Math.random() * (i + 1));
+    [order[i], order[swapIndex]] = [order[swapIndex], order[i]];
+  }
+
+  for (const index of order) {
+    const cell = board[index];
     if (cell.solutionDir === null) {
       cell.currentDir = null;
       continue;
     }
-    const offset = 1 + Math.floor(Math.random() * 7);
-    cell.currentDir = (cell.solutionDir + offset) % 8;
+
+    let assignedDir = null;
+    for (const candidateDir of shuffledDirections()) {
+      if (candidateDir === cell.solutionDir) {
+        continue;
+      }
+      if (followDirection(state.cols, state.rows, index, candidateDir) === index) {
+        continue;
+      }
+      if (wouldCreateCycle(board, index, candidateDir)) {
+        continue;
+      }
+      assignedDir = candidateDir;
+      break;
+    }
+
+    cell.currentDir = assignedDir ?? cell.solutionDir;
   }
 }
 
@@ -619,7 +697,7 @@ function startNewPuzzle(cols, rows) {
   if (current.every((value, idx) => value === board[idx].targetAccum)) {
     const pivot = board.find((cell) => cell.solutionDir !== null);
     if (pivot) {
-      pivot.currentDir = (pivot.currentDir + 1) % 8;
+      pivot.currentDir = findNextValidDirection(board, pivot.index, pivot.currentDir, pivot.solutionDir);
       current = accumulate(board, false);
     }
   }
@@ -647,11 +725,10 @@ function rotateCell(index) {
   const previousCurrentValues = state.board.map((boardCell) => boardCell.currentAccum);
   const oldDownstreamPath = collectDownstreamPath(index);
 
-  let nextDir = (cell.currentDir + 1) % 8;
-  let guard = 0;
-  while (followDirection(state.cols, state.rows, index, nextDir) === index && guard < 9) {
-    nextDir = (nextDir + 1) % 8;
-    guard += 1;
+  const nextDir = findNextValidDirection(state.board, index, cell.currentDir);
+
+  if (nextDir === cell.currentDir) {
+    return;
   }
 
   cell.currentDir = nextDir;
