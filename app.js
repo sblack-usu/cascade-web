@@ -60,6 +60,7 @@ const rotationCursorEl = document.createElement("div");
 rotationCursorEl.className = "rotation-cursor";
 document.body.appendChild(rotationCursorEl);
 let flowAudioContext = null;
+let blockedSoundLastAtMs = 0;
 
 function setSettingsModalOpen(isOpen) {
   document.body.classList.toggle("settings-open", isOpen);
@@ -259,6 +260,50 @@ function playFlowChangeSounds(valueDelayMap) {
     oscillator.start(startTime);
     oscillator.stop(startTime + 0.13);
   });
+}
+
+function playBlockedRotationSound() {
+  if (!state.useFlowSound) {
+    return;
+  }
+
+  const nowMs = performance.now();
+  if (nowMs - blockedSoundLastAtMs < 65) {
+    return;
+  }
+  blockedSoundLastAtMs = nowMs;
+
+  const audioCtx = getFlowAudioContext();
+  if (!audioCtx) {
+    return;
+  }
+
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+
+  const startTime = audioCtx.currentTime;
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+  const filterNode = audioCtx.createBiquadFilter();
+
+  filterNode.type = "lowpass";
+  filterNode.frequency.setValueAtTime(1400, startTime);
+
+  oscillator.type = "sawtooth";
+  oscillator.frequency.setValueAtTime(230, startTime);
+  oscillator.frequency.exponentialRampToValueAtTime(180, startTime + 0.08);
+
+  gainNode.gain.setValueAtTime(0.0001, startTime);
+  gainNode.gain.exponentialRampToValueAtTime(0.03, startTime + 0.01);
+  gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.09);
+
+  oscillator.connect(filterNode);
+  filterNode.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  oscillator.start(startTime);
+  oscillator.stop(startTime + 0.1);
 }
 
 function collectDownstreamPath(startIndex) {
@@ -1100,6 +1145,7 @@ function rotateCell(index, tileEl = null, rotationDirection = state.rotationDire
 
   if (nextDir === cell.currentDir) {
     animateBlockedTap(tileEl ?? boardEl.querySelector(`.tile[data-index="${index}"]`));
+    playBlockedRotationSound();
     return;
   }
 
