@@ -12,6 +12,7 @@ const state = {
   bounceStrength: 2,
   tileDelay: 55,
   rotationDirection: "cw",
+  showRotatableHints: false,
   lockedTileSize: null,
   board: [],
   moves: 0,
@@ -41,6 +42,7 @@ const bounceStrengthValueEl = document.getElementById("bounceStrengthValue");
 const tileDelaySliderEl = document.getElementById("tileDelaySlider");
 const tileDelayValueEl = document.getElementById("tileDelayValue");
 const tileShapeToggleBtn = document.getElementById("tileShapeToggleBtn");
+const rotatableHintsToggleBtn = document.getElementById("rotatableHintsToggleBtn");
 const sizeSelect = document.getElementById("sizeSelect");
 const SQUARE_DIR_DEGREES = [0, -45, -90, -135, 180, 135, 90, 45];
 const HEX_DIR_DEGREES = [0, -60, -120, 180, 120, 60];
@@ -260,6 +262,15 @@ function applyRotationDirection() {
       : "Rotation: Counterclockwise";
 }
 
+function applyRotatableHintsMode() {
+  if (!rotatableHintsToggleBtn) {
+    return;
+  }
+  rotatableHintsToggleBtn.textContent = state.showRotatableHints
+    ? "Rotatable Hints: On"
+    : "Rotatable Hints: Off";
+}
+
 function applyTileShape() {
   boardEl.classList.toggle("shape-square", state.tileShape === "square");
   boardEl.classList.toggle("shape-hex", state.tileShape === "hex");
@@ -377,6 +388,14 @@ if (rotationDirectionToggleBtn) {
   rotationDirectionToggleBtn.addEventListener("click", () => {
     state.rotationDirection = state.rotationDirection === "cw" ? "ccw" : "cw";
     applyRotationDirection();
+  });
+}
+
+if (rotatableHintsToggleBtn) {
+  rotatableHintsToggleBtn.addEventListener("click", () => {
+    state.showRotatableHints = !state.showRotatableHints;
+    applyRotatableHintsMode();
+    renderBoard();
   });
 }
 
@@ -952,6 +971,16 @@ function renderBoard() {
     tile.type = "button";
     tile.className = "tile";
     tile.classList.add(cell.currentAccum === cell.targetAccum ? "solved" : "unsolved");
+
+    if (
+      state.showRotatableHints
+      && !state.solved
+      && cell.solutionDir !== null
+      && findNextValidDirection(state.board, cell.index, cell.currentDir) !== cell.currentDir
+    ) {
+      tile.classList.add("rotatable-hint");
+    }
+
     tile.setAttribute("aria-label", `Tile ${cell.index}`);
     tile.dataset.index = String(cell.index);
 
@@ -1016,6 +1045,7 @@ applyBounceStrength();
 applyTileDelay();
 applyNumberMode();
 applyRotationDirection();
+applyRotatableHintsMode();
 applyValueBadgeMode();
 applyViewMode();
 window.addEventListener("resize", buildLinkOverlay);
