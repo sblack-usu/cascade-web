@@ -22,6 +22,10 @@ const state = {
 const boardEl = document.getElementById("board");
 const boardStageEl = document.getElementById("boardStage");
 const linkOverlayEl = document.getElementById("linkOverlay");
+const settingsToggleBtn = document.getElementById("settingsToggleBtn");
+const settingsCloseBtn = document.getElementById("settingsCloseBtn");
+const settingsBackdropEl = document.getElementById("settingsBackdrop");
+const settingsModalEl = document.getElementById("settingsModal");
 const statusTextEl = document.getElementById("statusText");
 const movesTextEl = document.getElementById("movesText");
 const newGameBtn = document.getElementById("newGameBtn");
@@ -46,6 +50,19 @@ const rotatableHintsToggleBtn = document.getElementById("rotatableHintsToggleBtn
 const sizeSelect = document.getElementById("sizeSelect");
 const SQUARE_DIR_DEGREES = [0, -45, -90, -135, 180, 135, 90, 45];
 const HEX_DIR_DEGREES = [0, -60, -120, 180, 120, 60];
+
+function setSettingsModalOpen(isOpen) {
+  document.body.classList.toggle("settings-open", isOpen);
+  if (settingsModalEl) {
+    settingsModalEl.setAttribute("aria-hidden", isOpen ? "false" : "true");
+  }
+  if (settingsBackdropEl) {
+    settingsBackdropEl.setAttribute("aria-hidden", isOpen ? "false" : "true");
+  }
+  if (settingsToggleBtn) {
+    settingsToggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  }
+}
 
 function getDirectionCount() {
   return state.tileShape === "hex" ? 6 : 8;
@@ -463,6 +480,27 @@ if (tileDelaySliderEl) {
     applyTileDelay();
   });
 }
+
+if (settingsToggleBtn) {
+  settingsToggleBtn.addEventListener("click", () => {
+    const shouldOpen = !document.body.classList.contains("settings-open");
+    setSettingsModalOpen(shouldOpen);
+  });
+}
+
+if (settingsCloseBtn) {
+  settingsCloseBtn.addEventListener("click", () => setSettingsModalOpen(false));
+}
+
+if (settingsBackdropEl) {
+  settingsBackdropEl.addEventListener("click", () => setSettingsModalOpen(false));
+}
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && document.body.classList.contains("settings-open")) {
+    setSettingsModalOpen(false);
+  }
+});
 
 function inBounds(cols, rows, x, y) {
   return x >= 0 && y >= 0 && x < cols && y < rows;

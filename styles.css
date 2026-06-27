@@ -43,6 +43,11 @@ body {
   align-items: flex-start;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: flex-start;
+}
+
 .topbar h1 {
   margin: 0;
   font-size: clamp(1.35rem, 2.1vw, 2.1rem);
@@ -55,29 +60,82 @@ body {
 }
 
 .controls {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  justify-content: flex-end;
-  gap: 0.6rem;
-  max-width: min(100%, 760px);
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: end;
+  gap: 0.65rem;
 }
 
 .controls label {
   display: grid;
   gap: 0.25rem;
   font-size: 0.9rem;
-  flex: 1 1 180px;
-  min-width: 160px;
+  min-width: 0;
 }
 
 .range-control {
-  min-width: 200px;
+  min-width: 0;
 }
 
 .controls > button {
-  flex: 0 1 auto;
-  align-self: end;
+  justify-self: stretch;
+}
+
+.settings-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 27, 36, 0.36);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 170ms ease;
+  z-index: 20;
+}
+
+.settings-modal {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(390px, 94vw);
+  height: 100dvh;
+  padding: 0.9rem;
+  border-left: 1px solid #aac0cb;
+  background: color-mix(in srgb, var(--panel) 92%, white 8%);
+  box-shadow: -16px 0 38px rgba(16, 38, 56, 0.2);
+  transform: translateX(102%);
+  transition: transform 210ms cubic-bezier(0.22, 1, 0.36, 1);
+  z-index: 21;
+  overflow-y: auto;
+}
+
+.settings-header {
+  position: sticky;
+  top: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  margin: -0.9rem -0.9rem 0.75rem;
+  padding: 0.8rem 0.9rem;
+  background: color-mix(in srgb, var(--panel) 94%, white 6%);
+  border-bottom: 1px solid #c8d8df;
+}
+
+.settings-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+body.settings-open {
+  overflow: hidden;
+}
+
+body.settings-open .settings-backdrop {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+body.settings-open .settings-modal {
+  transform: translateX(0);
 }
 
 .range-control span {
@@ -413,13 +471,8 @@ button {
     flex-direction: column;
   }
 
-  .controls {
+  .topbar-actions {
     width: 100%;
-  }
-
-  .controls label,
-  .controls button,
-  .controls select {
-    flex: 1;
+    justify-content: flex-end;
   }
 }

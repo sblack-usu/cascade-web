@@ -13,6 +13,17 @@
         <h1>Flow Accumulation Puzzle</h1>
         <p>Rotate tiles to route runoff so every tile matches its target accumulation.</p>
       </div>
+      <div class="topbar-actions">
+        <button id="settingsToggleBtn" type="button">Settings</button>
+      </div>
+    </header>
+
+    <div id="settingsBackdrop" class="settings-backdrop" aria-hidden="true"></div>
+    <aside id="settingsModal" class="settings-modal" aria-hidden="true" aria-label="Game settings">
+      <header class="settings-header">
+        <h2>State Controls</h2>
+        <button id="settingsCloseBtn" type="button">Close</button>
+      </header>
       <div class="controls">
         <label>
           Grid
@@ -57,7 +68,7 @@
         <button id="viewToggleBtn" type="button">View: Arrows</button>
         <button id="newGameBtn">New Puzzle</button>
       </div>
-    </header>
+    </aside>
 
     <section class="legend">
       <div><span class="dot dot-solved"></span> solved tile</div>
