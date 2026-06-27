@@ -831,7 +831,7 @@ function renderBoard() {
 
     const target = document.createElement("span");
     target.className = "target";
-    target.textContent = `t:${cell.targetAccum}`;
+    target.textContent = String(cell.targetAccum);
     if (state.hideBaseAndMatchedCurrent && cell.currentAccum === cell.targetAccum) {
       target.style.visibility = "hidden";
     }
