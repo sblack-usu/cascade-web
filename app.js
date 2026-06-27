@@ -127,6 +127,27 @@ function animateTileBounce(tileEl) {
   );
 }
 
+function animateBlockedTap(tileEl) {
+  if (!tileEl) {
+    return;
+  }
+
+  tileEl.animate(
+    [
+      { transform: "translateX(0)" },
+      { transform: "translateX(-4px)", offset: 0.2 },
+      { transform: "translateX(4px)", offset: 0.4 },
+      { transform: "translateX(-3px)", offset: 0.6 },
+      { transform: "translateX(3px)", offset: 0.8 },
+      { transform: "translateX(0)" },
+    ],
+    {
+      duration: Math.max(130, Math.min(190, state.animationSpeed * 0.7)),
+      easing: "ease-out",
+    }
+  );
+}
+
 function animateCurrentValueUpdate(currentEl, delay = 0) {
   if (!currentEl) {
     return;
@@ -820,7 +841,7 @@ function startNewPuzzle(cols, rows) {
   updateStatus();
 }
 
-function rotateCell(index) {
+function rotateCell(index, tileEl = null) {
   if (state.solved) {
     return;
   }
@@ -837,6 +858,7 @@ function rotateCell(index) {
   const nextDir = findNextValidDirection(state.board, index, cell.currentDir);
 
   if (nextDir === cell.currentDir) {
+    animateBlockedTap(tileEl ?? boardEl.querySelector(`.tile[data-index="${index}"]`));
     return;
   }
 
@@ -976,7 +998,7 @@ function renderBoard() {
     }
 
     tile.append(base, direction, current, target);
-    tile.addEventListener("click", () => rotateCell(cell.index));
+    tile.addEventListener("click", () => rotateCell(cell.index, tile));
     frag.appendChild(tile);
   }
 
