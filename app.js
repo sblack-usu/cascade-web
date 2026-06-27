@@ -2,9 +2,11 @@ const state = {
   cols: 6,
   rows: 6,
   viewMode: "arrows",
-  hideBaseAndMatchedCurrent: false,
-  markerScale: 34,
-  arrowShift: 1,
+  hideBaseAndMatchedCurrent: true,
+  showCurrentValueBadge: false,
+  markerScale: 50,
+  arrowShift: 3,
+  currentValueScale: 2,
   board: [],
   moves: 0,
   solved: false,
@@ -16,12 +18,15 @@ const linkOverlayEl = document.getElementById("linkOverlay");
 const statusTextEl = document.getElementById("statusText");
 const movesTextEl = document.getElementById("movesText");
 const newGameBtn = document.getElementById("newGameBtn");
+const valueBadgeToggleBtn = document.getElementById("valueBadgeToggleBtn");
 const numberModeToggleBtn = document.getElementById("numberModeToggleBtn");
 const viewToggleBtn = document.getElementById("viewToggleBtn");
 const markerScaleSliderEl = document.getElementById("markerScaleSlider");
 const markerScaleValueEl = document.getElementById("markerScaleValue");
 const arrowShiftSliderEl = document.getElementById("arrowShiftSlider");
 const arrowShiftValueEl = document.getElementById("arrowShiftValue");
+const currentValueScaleSliderEl = document.getElementById("currentValueScaleSlider");
+const currentValueScaleValueEl = document.getElementById("currentValueScaleValue");
 const sizeSelect = document.getElementById("sizeSelect");
 const DIR_DEGREES = [0, -45, -90, -135, 180, 135, 90, 45];
 
@@ -32,6 +37,16 @@ function applyNumberMode() {
   numberModeToggleBtn.textContent = state.hideBaseAndMatchedCurrent
     ? "Number Mode: Minimal"
     : "Number Mode: Standard";
+}
+
+function applyValueBadgeMode() {
+  boardEl.classList.toggle("hide-current-badge", !state.showCurrentValueBadge);
+  if (!valueBadgeToggleBtn) {
+    return;
+  }
+  valueBadgeToggleBtn.textContent = state.showCurrentValueBadge
+    ? "Value Badge: On"
+    : "Value Badge: Off";
 }
 
 function applyMarkerScale() {
@@ -51,6 +66,16 @@ function applyArrowShift() {
   }
   if (arrowShiftSliderEl) {
     arrowShiftSliderEl.value = String(state.arrowShift);
+  }
+}
+
+function applyCurrentValueScale() {
+  boardEl.style.setProperty("--current-scale", String(state.currentValueScale));
+  if (currentValueScaleValueEl) {
+    currentValueScaleValueEl.textContent = `${state.currentValueScale.toFixed(2)}x`;
+  }
+  if (currentValueScaleSliderEl) {
+    currentValueScaleSliderEl.value = String(state.currentValueScale);
   }
 }
 
@@ -108,6 +133,13 @@ if (numberModeToggleBtn) {
   });
 }
 
+if (valueBadgeToggleBtn) {
+  valueBadgeToggleBtn.addEventListener("click", () => {
+    state.showCurrentValueBadge = !state.showCurrentValueBadge;
+    applyValueBadgeMode();
+  });
+}
+
 if (markerScaleSliderEl) {
   markerScaleSliderEl.addEventListener("input", () => {
     state.markerScale = Number(markerScaleSliderEl.value);
@@ -119,6 +151,13 @@ if (arrowShiftSliderEl) {
   arrowShiftSliderEl.addEventListener("input", () => {
     state.arrowShift = Number(arrowShiftSliderEl.value);
     applyArrowShift();
+  });
+}
+
+if (currentValueScaleSliderEl) {
+  currentValueScaleSliderEl.addEventListener("input", () => {
+    state.currentValueScale = Number(currentValueScaleSliderEl.value);
+    applyCurrentValueScale();
   });
 }
 
@@ -498,6 +537,8 @@ function renderBoard() {
 startNewPuzzle(state.cols, state.rows);
 applyMarkerScale();
 applyArrowShift();
+applyCurrentValueScale();
 applyNumberMode();
+applyValueBadgeMode();
 applyViewMode();
 window.addEventListener("resize", buildLinkOverlay);

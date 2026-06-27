@@ -26,13 +26,18 @@
           </select>
         </label>
         <label class="range-control" for="markerScaleSlider">
-          Arrow Position <span id="markerScaleValue">34%</span>
-          <input id="markerScaleSlider" type="range" min="-10" max="45" step="1" value="34" />
+          Arrow Position <span id="markerScaleValue">45%</span>
+          <input id="markerScaleSlider" type="range" min="-10" max="100" step="1" value="45" />
         </label>
         <label class="range-control" for="arrowShiftSlider">
-          Marker Scale <span id="arrowShiftValue">1.00x</span>
-          <input id="arrowShiftSlider" type="range" min="0.55" max="3" step="0.05" value="1" />
+          Marker Scale <span id="arrowShiftValue">3.00x</span>
+          <input id="arrowShiftSlider" type="range" min="0.55" max="5" step="0.05" value="3" />
         </label>
+        <label class="range-control" for="currentValueScaleSlider">
+          Current Value Scale <span id="currentValueScaleValue">1.00x</span>
+          <input id="currentValueScaleSlider" type="range" min="0.6" max="2.4" step="0.05" value="1" />
+        </label>
+        <button id="valueBadgeToggleBtn" type="button">Value Badge: On</button>
         <button id="numberModeToggleBtn" type="button">Number Mode: Standard</button>
         <button id="viewToggleBtn" type="button">View: Arrows</button>
         <button id="newGameBtn">New Puzzle</button>
