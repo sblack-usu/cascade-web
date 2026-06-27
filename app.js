@@ -9,6 +9,7 @@ const state = {
   currentValueScale: 2,
   animationSpeed: 220,
   bounceStrength: 2,
+  tileDelay: 55,
   lockedTileSize: null,
   board: [],
   moves: 0,
@@ -34,6 +35,8 @@ const animationSpeedSliderEl = document.getElementById("animationSpeedSlider");
 const animationSpeedValueEl = document.getElementById("animationSpeedValue");
 const bounceStrengthSliderEl = document.getElementById("bounceStrengthSlider");
 const bounceStrengthValueEl = document.getElementById("bounceStrengthValue");
+const tileDelaySliderEl = document.getElementById("tileDelaySlider");
+const tileDelayValueEl = document.getElementById("tileDelayValue");
 const sizeSelect = document.getElementById("sizeSelect");
 const DIR_DEGREES = [0, -45, -90, -135, 180, 135, 90, 45];
 
@@ -92,6 +95,89 @@ function animateTileBounce(tileEl) {
       easing: "cubic-bezier(0.22, 1, 0.36, 1)",
     }
   );
+}
+
+function animateCurrentValueUpdate(currentEl, delay = 0) {
+  if (!currentEl) {
+    return;
+  }
+
+  const baseScale = state.currentValueScale;
+  currentEl.animate(
+    [
+      {
+        transform: `translate(-50%, -50%) scale(${baseScale * 0.88})`,
+        opacity: 0.72,
+      },
+      {
+        transform: `translate(-50%, -58%) scale(${baseScale * 1.14})`,
+        opacity: 1,
+        offset: 0.45,
+      },
+      {
+        transform: `translate(-50%, -50%) scale(${baseScale})`,
+        opacity: 1,
+      },
+    ],
+    {
+      duration: Math.max(220, state.animationSpeed + 80),
+      delay,
+      easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+    }
+  );
+}
+
+function collectDownstreamPath(startIndex) {
+  const path = [];
+  const visited = new Set([startIndex]);
+  let currentIndex = startIndex;
+
+  while (true) {
+    const cell = state.board[currentIndex];
+    if (!cell || cell.currentDir === null) {
+      return path;
+    }
+
+    const nextIndex = followDirection(state.cols, state.rows, currentIndex, cell.currentDir);
+    if (nextIndex === currentIndex || visited.has(nextIndex)) {
+      return path;
+    }
+
+    path.push(nextIndex);
+    visited.add(nextIndex);
+    currentIndex = nextIndex;
+  }
+}
+
+function buildValueUpdateDelayMap(oldPath, newPath, changedIndexes) {
+  const delayMap = new Map();
+  const stepDelay = state.tileDelay;
+  const assignPathDelays = (path) => {
+    path.forEach((index, order) => {
+      if (!changedIndexes.has(index)) {
+        return;
+      }
+      const nextDelay = order * stepDelay;
+      const existingDelay = delayMap.get(index);
+      if (existingDelay === undefined || nextDelay < existingDelay) {
+        delayMap.set(index, nextDelay);
+      }
+    });
+  };
+
+  assignPathDelays(newPath);
+  assignPathDelays(oldPath);
+
+  let trailingOrder = Math.max(newPath.length, oldPath.length);
+  changedIndexes.forEach((index) => {
+    if (delayMap.has(index)) {
+      return;
+    }
+    delayMap.set(index, trailingOrder * stepDelay);
+    trailingOrder += 1;
+  });
+
+  return delayMap;
 }
 
 function applyNumberMode() {
@@ -158,6 +244,15 @@ function applyBounceStrength() {
   }
   if (bounceStrengthSliderEl) {
     bounceStrengthSliderEl.value = String(state.bounceStrength);
+  }
+}
+
+function applyTileDelay() {
+  if (tileDelayValueEl) {
+    tileDelayValueEl.textContent = `${state.tileDelay}ms`;
+  }
+  if (tileDelaySliderEl) {
+    tileDelaySliderEl.value = String(state.tileDelay);
   }
 }
 
@@ -254,6 +349,13 @@ if (bounceStrengthSliderEl) {
   bounceStrengthSliderEl.addEventListener("input", () => {
     state.bounceStrength = Number(bounceStrengthSliderEl.value);
     applyBounceStrength();
+  });
+}
+
+if (tileDelaySliderEl) {
+  tileDelaySliderEl.addEventListener("input", () => {
+    state.tileDelay = Number(tileDelaySliderEl.value);
+    applyTileDelay();
   });
 }
 
@@ -542,6 +644,8 @@ function rotateCell(index) {
   }
 
   const previousDir = cell.currentDir;
+  const previousCurrentValues = state.board.map((boardCell) => boardCell.currentAccum);
+  const oldDownstreamPath = collectDownstreamPath(index);
 
   let nextDir = (cell.currentDir + 1) % 8;
   let guard = 0;
@@ -552,13 +656,28 @@ function rotateCell(index) {
 
   cell.currentDir = nextDir;
   cell.rotationFromDir = previousDir;
-  cell.shouldBounce = true;
   state.moves += 1;
   movesTextEl.textContent = `Moves: ${state.moves}`;
 
   const current = accumulate(state.board, false);
   for (let i = 0; i < state.board.length; i += 1) {
     state.board[i].currentAccum = current[i];
+  }
+
+  const newDownstreamPath = collectDownstreamPath(index);
+  const changedIndexes = new Set();
+  for (let i = 0; i < state.board.length; i += 1) {
+    if (previousCurrentValues[i] !== state.board[i].currentAccum) {
+      changedIndexes.add(i);
+    }
+  }
+
+  const valueDelayMap = buildValueUpdateDelayMap(oldDownstreamPath, newDownstreamPath, changedIndexes);
+  for (let i = 0; i < state.board.length; i += 1) {
+    if (changedIndexes.has(i)) {
+      state.board[i].shouldAnimateValue = true;
+      state.board[i].valueUpdateDelay = valueDelayMap.get(i) ?? 0;
+    }
   }
 
   renderBoard();
@@ -626,6 +745,11 @@ function renderBoard() {
     const current = document.createElement("span");
     current.className = "current";
     current.textContent = String(cell.currentAccum);
+    if (cell.shouldAnimateValue) {
+      animateCurrentValueUpdate(current, cell.valueUpdateDelay ?? 0);
+      delete cell.shouldAnimateValue;
+      delete cell.valueUpdateDelay;
+    }
 
     const target = document.createElement("span");
     target.className = "target";
@@ -646,11 +770,6 @@ function renderBoard() {
       }
     }
 
-    if (cell.shouldBounce) {
-      animateTileBounce(tile);
-      delete cell.shouldBounce;
-    }
-
     tile.append(base, direction, current, target);
     tile.addEventListener("click", () => rotateCell(cell.index));
     frag.appendChild(tile);
@@ -666,6 +785,7 @@ applyArrowScale();
 applyCurrentValueScale();
 applyAnimationSpeed();
 applyBounceStrength();
+applyTileDelay();
 applyNumberMode();
 applyValueBadgeMode();
 applyViewMode();
