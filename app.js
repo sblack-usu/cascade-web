@@ -10,6 +10,7 @@ const state = {
   animationSpeed: 220,
   bounceStrength: 2,
   tileDelay: 55,
+  rotationDirection: "cw",
   lockedTileSize: null,
   board: [],
   moves: 0,
@@ -22,6 +23,7 @@ const linkOverlayEl = document.getElementById("linkOverlay");
 const statusTextEl = document.getElementById("statusText");
 const movesTextEl = document.getElementById("movesText");
 const newGameBtn = document.getElementById("newGameBtn");
+const rotationDirectionToggleBtn = document.getElementById("rotationDirectionToggleBtn");
 const valueBadgeToggleBtn = document.getElementById("valueBadgeToggleBtn");
 const numberModeToggleBtn = document.getElementById("numberModeToggleBtn");
 const viewToggleBtn = document.getElementById("viewToggleBtn");
@@ -44,12 +46,23 @@ function getDirectionAngle(dir) {
   return dir === null ? 0 : DIR_DEGREES[dir];
 }
 
-function getShortestAngleDelta(fromAngle, toAngle) {
+function getClockwiseAngleDelta(fromAngle, toAngle) {
   let delta = toAngle - fromAngle;
-  while (delta > 180) {
+  while (delta < 0) {
+    delta += 360;
+  }
+  while (delta >= 360) {
     delta -= 360;
   }
-  while (delta < -180) {
+  return delta;
+}
+
+function getCounterclockwiseAngleDelta(fromAngle, toAngle) {
+  let delta = toAngle - fromAngle;
+  while (delta > 0) {
+    delta -= 360;
+  }
+  while (delta <= -360) {
     delta += 360;
   }
   return delta;
@@ -62,7 +75,9 @@ function animateDirectionRotation(directionEl, fromDir, toDir) {
 
   const fromAngle = getDirectionAngle(fromDir);
   const toAngle = getDirectionAngle(toDir);
-  const delta = getShortestAngleDelta(fromAngle, toAngle);
+  const delta = state.rotationDirection === "cw"
+    ? getClockwiseAngleDelta(fromAngle, toAngle)
+    : getCounterclockwiseAngleDelta(fromAngle, toAngle);
   const finalAngle = fromAngle + delta;
 
   directionEl.animate(
@@ -199,6 +214,16 @@ function applyValueBadgeMode() {
     : "Value Badge: Off";
 }
 
+function applyRotationDirection() {
+  if (!rotationDirectionToggleBtn) {
+    return;
+  }
+  rotationDirectionToggleBtn.textContent =
+    state.rotationDirection === "cw"
+      ? "Rotation: Clockwise"
+      : "Rotation: Counterclockwise";
+}
+
 function applyArrowPosition() {
   boardEl.style.setProperty("--dir-forward", `${state.arrowPosition}%`);
   if (arrowPositionValueEl) {
@@ -299,6 +324,13 @@ if (viewToggleBtn) {
   viewToggleBtn.addEventListener("click", () => {
     state.viewMode = state.viewMode === "arrows" ? "lines" : "arrows";
     applyViewMode();
+  });
+}
+
+if (rotationDirectionToggleBtn) {
+  rotationDirectionToggleBtn.addEventListener("click", () => {
+    state.rotationDirection = state.rotationDirection === "cw" ? "ccw" : "cw";
+    applyRotationDirection();
   });
 }
 
@@ -498,8 +530,9 @@ function shuffledDirections() {
 }
 
 function findNextValidDirection(board, cellIndex, currentDir, excludedDir = null) {
+  const directionStep = state.rotationDirection === "cw" ? -1 : 1;
   for (let offset = 1; offset <= 8; offset += 1) {
-    const candidateDir = (currentDir + offset) % 8;
+    const candidateDir = (currentDir + directionStep * offset + 8 * 8) % 8;
     if (candidateDir === excludedDir) {
       continue;
     }
@@ -865,6 +898,7 @@ applyAnimationSpeed();
 applyBounceStrength();
 applyTileDelay();
 applyNumberMode();
+applyRotationDirection();
 applyValueBadgeMode();
 applyViewMode();
 window.addEventListener("resize", buildLinkOverlay);
