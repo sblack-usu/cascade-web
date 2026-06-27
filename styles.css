@@ -226,6 +226,22 @@ button {
   position: relative;
 }
 
+.board-stage.solved-celebrate {
+  animation: solved-stage-glow 720ms ease-out;
+}
+
+@keyframes solved-stage-glow {
+  0% {
+    filter: drop-shadow(0 0 0 rgba(30, 139, 102, 0));
+  }
+  36% {
+    filter: drop-shadow(0 0 22px rgba(30, 139, 102, 0.55));
+  }
+  100% {
+    filter: drop-shadow(0 0 0 rgba(30, 139, 102, 0));
+  }
+}
+
 .link-overlay {
   position: absolute;
   z-index: 3;

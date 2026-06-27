@@ -306,6 +306,78 @@ function playBlockedRotationSound() {
   oscillator.stop(startTime + 0.1);
 }
 
+function playSolvedSound() {
+  if (!state.useFlowSound) {
+    return;
+  }
+
+  const audioCtx = getFlowAudioContext();
+  if (!audioCtx) {
+    return;
+  }
+
+  if (audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+
+  const startTime = audioCtx.currentTime;
+  const notes = [440, 554.37, 659.25];
+
+  notes.forEach((freq, idx) => {
+    const noteStart = startTime + idx * 0.075;
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    const filterNode = audioCtx.createBiquadFilter();
+
+    filterNode.type = "lowpass";
+    filterNode.frequency.setValueAtTime(2600, noteStart);
+
+    oscillator.type = "triangle";
+    oscillator.frequency.setValueAtTime(freq, noteStart);
+
+    gainNode.gain.setValueAtTime(0.0001, noteStart);
+    gainNode.gain.exponentialRampToValueAtTime(0.03, noteStart + 0.02);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, noteStart + 0.17);
+
+    oscillator.connect(filterNode);
+    filterNode.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+
+    oscillator.start(noteStart);
+    oscillator.stop(noteStart + 0.18);
+  });
+}
+
+function playSolvedAnimation() {
+  boardEl.animate(
+    [
+      { transform: "scale(1)" },
+      { transform: "scale(1.04)", offset: 0.35 },
+      { transform: "scale(0.995)", offset: 0.72 },
+      { transform: "scale(1)" },
+    ],
+    {
+      duration: 620,
+      easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+    }
+  );
+
+  if (boardStageEl) {
+    boardStageEl.classList.remove("solved-celebrate");
+    // Restart the CSS keyframe animation when solving again in a new puzzle.
+    void boardStageEl.offsetWidth;
+    boardStageEl.classList.add("solved-celebrate");
+    window.setTimeout(() => {
+      boardStageEl.classList.remove("solved-celebrate");
+    }, 760);
+  }
+}
+
+function triggerSolvedCelebration() {
+  playSolvedAnimation();
+  playSolvedSound();
+}
+
 function collectDownstreamPath(startIndex) {
   const path = [];
   const visited = new Set([startIndex]);
@@ -1192,8 +1264,13 @@ function isSolved() {
 }
 
 function updateStatus() {
+  const wasSolved = state.solved;
   const solvedNow = isSolved();
   state.solved = solvedNow;
+
+  if (solvedNow && !wasSolved) {
+    triggerSolvedCelebration();
+  }
 
   if (solvedNow) {
     statusTextEl.textContent = `Solved in ${state.moves} moves. New Puzzle for another watershed.`;
