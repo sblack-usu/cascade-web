@@ -492,6 +492,13 @@ function tryLoadBoardFromUrl() {
         ? "Loaded board and benchmark from URL."
         : "Loaded board from URL.";
     }
+
+    // Clear one-time import params so they do not linger in the address bar.
+    params.delete("board");
+    params.delete("result");
+    const nextUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ""}${window.location.hash}`;
+    window.history.replaceState({}, "", nextUrl);
+
     return true;
   } catch (error) {
     console.warn("Failed to load board from URL parameter", error);
