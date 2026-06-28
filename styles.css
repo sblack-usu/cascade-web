@@ -379,18 +379,21 @@ body {
 }
 
 body.display-settings-open,
-body.difficulty-settings-open {
+body.difficulty-settings-open,
+body.lesson-settings-open {
   overflow: hidden;
 }
 
 body.display-settings-open .settings-backdrop,
-body.difficulty-settings-open .settings-backdrop {
+body.difficulty-settings-open .settings-backdrop,
+body.lesson-settings-open .settings-backdrop {
   opacity: 1;
   pointer-events: auto;
 }
 
 body.display-settings-open #displaySettingsModal,
-body.difficulty-settings-open #difficultySettingsModal {
+body.difficulty-settings-open #difficultySettingsModal,
+body.lesson-settings-open #lessonSettingsModal {
   transform: translateX(0);
 }
 
@@ -552,6 +555,70 @@ input[type="range"]:focus-visible {
 
 .board-status {
   margin-top: 0.1rem;
+}
+
+.lesson-studio {
+  border: 1px solid var(--ui-border);
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--ui-surface-strong), var(--ui-surface));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  padding: 0.75rem 0.85rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+#lessonSettingsModal .lesson-studio {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.lesson-studio-header h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.lesson-studio-header p {
+  margin: 0.2rem 0 0;
+  color: var(--subtitle);
+  font-size: 0.9rem;
+}
+
+.lesson-studio-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+  align-items: end;
+}
+
+.lesson-studio-controls label {
+  display: grid;
+  gap: 0.22rem;
+  font-size: 0.88rem;
+  border: 1px solid color-mix(in srgb, var(--ui-border) 86%, white 14%);
+  border-radius: 10px;
+  background: var(--ui-surface-soft);
+  padding: 0.45rem 0.55rem;
+}
+
+#lessonPromptBtn {
+  grid-column: 1 / -1;
+}
+
+.lesson-card {
+  border: 1px solid color-mix(in srgb, var(--ui-border) 90%, white 10%);
+  border-radius: 12px;
+  background: var(--ui-surface-strong);
+  padding: 0.65rem 0.75rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.lesson-card p {
+  margin: 0;
+  line-height: 1.35;
 }
 
 .dot {
@@ -1119,6 +1186,24 @@ body[data-palette="forest"] .app-shell {
     gap: 0.55rem;
   }
 
+  .lesson-studio {
+    padding: 0.55rem;
+    gap: 0.5rem;
+  }
+
+  .lesson-studio-header h2 {
+    font-size: 0.92rem;
+  }
+
+  .lesson-studio-header p,
+  .lesson-card p {
+    font-size: 0.84rem;
+  }
+
+  .lesson-studio-controls {
+    grid-template-columns: 1fr;
+  }
+
   .status-row {
     justify-content: space-between;
   }
@@ -1173,6 +1258,10 @@ body[data-palette="forest"] .app-shell {
   .legend,
   .status-row {
     display: flex;
+  }
+
+  .lesson-studio {
+    padding: 0.5rem 0.6rem;
   }
 
   .topbar-actions {

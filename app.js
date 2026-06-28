@@ -9,6 +9,8 @@ const state = {
   arrowScale: 2.15,
   currentValueScale: 1.4,
   sinkTone: 7,
+  lessonBand: "3to5",
+  lessonId: "trace-values",
   animationSpeed: 220,
   bounceStrength: 2,
   tileDelay: 55,
@@ -34,11 +36,14 @@ const boardStageEl = document.getElementById("boardStage");
 const linkOverlayEl = document.getElementById("linkOverlay");
 const displaySettingsToggleBtn = document.getElementById("displaySettingsToggleBtn");
 const difficultySettingsToggleBtn = document.getElementById("difficultySettingsToggleBtn");
+const lessonSettingsToggleBtn = document.getElementById("lessonSettingsToggleBtn");
 const displaySettingsCloseBtn = document.getElementById("displaySettingsCloseBtn");
 const difficultySettingsCloseBtn = document.getElementById("difficultySettingsCloseBtn");
+const lessonSettingsCloseBtn = document.getElementById("lessonSettingsCloseBtn");
 const settingsBackdropEl = document.getElementById("settingsBackdrop");
 const displaySettingsModalEl = document.getElementById("displaySettingsModal");
 const difficultySettingsModalEl = document.getElementById("difficultySettingsModal");
+const lessonSettingsModalEl = document.getElementById("lessonSettingsModal");
 const statusTextEl = document.getElementById("statusText");
 const movesTextEl = document.getElementById("movesText");
 const postWinNewGameBtn = document.getElementById("postWinNewGameBtn");
@@ -56,6 +61,15 @@ const currentValueScaleSliderEl = document.getElementById("currentValueScaleSlid
 const currentValueScaleValueEl = document.getElementById("currentValueScaleValue");
 const sinkToneSliderEl = document.getElementById("sinkToneSlider");
 const sinkToneValueEl = document.getElementById("sinkToneValue");
+const lessonBandSelectEl = document.getElementById("lessonBandSelect");
+const lessonSelectEl = document.getElementById("lessonSelect");
+const lessonPromptBtn = document.getElementById("lessonPromptBtn");
+const lessonFocusTextEl = document.getElementById("lessonFocusText");
+const lessonTaskTextEl = document.getElementById("lessonTaskText");
+const lessonChallengeTextEl = document.getElementById("lessonChallengeText");
+const lessonTeacherPromptTextEl = document.getElementById("lessonTeacherPromptText");
+const lessonReflectionTextEl = document.getElementById("lessonReflectionText");
+const lessonQuickCheckTextEl = document.getElementById("lessonQuickCheckText");
 const paletteSelectEl = document.getElementById("paletteSelect");
 const animationSpeedSliderEl = document.getElementById("animationSpeedSlider");
 const animationSpeedValueEl = document.getElementById("animationSpeedValue");
@@ -78,13 +92,121 @@ rotationCursorEl.className = "rotation-cursor";
 document.body.appendChild(rotationCursorEl);
 let flowAudioContext = null;
 let blockedSoundLastAtMs = 0;
+let lessonQuickCheckCursor = 0;
+
+const LESSON_LIBRARY = {
+  k2: {
+    lessons: [
+      {
+        id: "number-streams",
+        title: "Number Streams",
+        focus: "Compose and decompose values up to 10 using part-whole relationships.",
+        task: "Route two or three small streams to build one target exactly.",
+        teacherPrompt: "What parts made this total?",
+        reflection: "I made ___ using ___ and ___.",
+      },
+      {
+        id: "make-ten",
+        title: "Make Ten Watersheds",
+        focus: "Use benchmark ten pairs to build target values.",
+        task: "Find one tile where two streams can combine to make 10.",
+        teacherPrompt: "What does this number need to become 10?",
+        reflection: "I made 10 by combining ___ and ___",
+      },
+      {
+        id: "same-total",
+        title: "Same Total, Different Path",
+        focus: "Recognize that totals can be made in more than one way.",
+        task: "Solve one target, then find a different route that still works.",
+        teacherPrompt: "Can this same target be made another way?",
+        reflection: "Another way to make this total is ___.",
+      },
+    ],
+    quickChecks: [
+      "Choose one target tile. What parts made its total?",
+      "Write an equation for one accumulated value.",
+      "What happened when you rotated one tile?",
+      "Predict what will change before making a move.",
+    ],
+  },
+  "3to5": {
+    lessons: [
+      {
+        id: "trace-values",
+        title: "Where Did the Number Come From?",
+        focus: "Trace upstream contributions and explain accumulated values.",
+        task: "Pick one target tile and trace all streams feeding it.",
+        teacherPrompt: "Where did this number come from?",
+        reflection: "The target was ___. It was made from ___.",
+      },
+      {
+        id: "fix-flow",
+        title: "Fix the Flow",
+        focus: "Use missing addends and comparison reasoning.",
+        task: "Find a target that is too high or too low and fix its route.",
+        teacherPrompt: "Which target is off, and by how much?",
+        reflection: "A move I changed was ___. It affected ___ because ___.",
+      },
+      {
+        id: "one-move-many",
+        title: "One Move, Many Changes",
+        focus: "Predict cause-and-effect downstream from a single rotation.",
+        task: "Before each move, predict two tiles that will change.",
+        teacherPrompt: "What will change downstream if you rotate this tile?",
+        reflection: "I predicted ___. What happened was ___.",
+      },
+    ],
+    quickChecks: [
+      "Which move helped the most? Why?",
+      "Which target was too high or too low? What needed to change?",
+      "Find two different ways to make the same total.",
+      "Circle the upstream tiles that contribute to a selected target.",
+    ],
+  },
+  "6plus": {
+    lessons: [
+      {
+        id: "flow-networks",
+        title: "Flow Networks",
+        focus: "Model the puzzle as a directed network with accumulation.",
+        task: "Describe one tile as a node and one arrow as a directed edge.",
+        teacherPrompt: "Which tiles are sources, and which are downstream?",
+        reflection: "Cascade is like a network because ___.",
+      },
+      {
+        id: "loops-cycles",
+        title: "Loops and Invalid Systems",
+        focus: "Explain why loops break clean accumulation.",
+        task: "Locate one loop and explain why it blocks a stable solution.",
+        teacherPrompt: "Why is this cycle a problem?",
+        reflection: "This loop fails because ___.",
+      },
+      {
+        id: "sources-sinks-negative",
+        title: "Sources, Sinks, and Negative Flow",
+        focus: "Interpret positive and negative values in a flow system.",
+        task: "Use a level with negative runoff and explain one sink behavior.",
+        teacherPrompt: "How does a negative base value change the basin total?",
+        reflection: "A negative source changed the total by ___.",
+      },
+    ],
+    quickChecks: [
+      "Explain why a loop is a problem.",
+      "Describe Cascade as a flow network using source, downstream, and accumulation.",
+      "Predict system-wide effects from one rotation.",
+      "Compare two strategies and justify which is more efficient.",
+    ],
+  },
+};
 
 function setSettingsDrawerOpen(drawerName, isOpen) {
   const displayOpen = drawerName === "display" ? isOpen : false;
   const difficultyOpen = drawerName === "difficulty" ? isOpen : false;
+  const lessonOpen = drawerName === "lesson" ? isOpen : false;
 
   document.body.classList.toggle("display-settings-open", displayOpen);
   document.body.classList.toggle("difficulty-settings-open", difficultyOpen);
+  document.body.classList.toggle("lesson-settings-open", lessonOpen);
 
   if (displaySettingsModalEl) {
     displaySettingsModalEl.setAttribute("aria-hidden", displayOpen ? "false" : "true");
@@ -92,14 +214,20 @@ function setSettingsDrawerOpen(drawerName, isOpen) {
   if (difficultySettingsModalEl) {
     difficultySettingsModalEl.setAttribute("aria-hidden", difficultyOpen ? "false" : "true");
   }
+  if (lessonSettingsModalEl) {
+    lessonSettingsModalEl.setAttribute("aria-hidden", lessonOpen ? "false" : "true");
+  }
   if (settingsBackdropEl) {
-    settingsBackdropEl.setAttribute("aria-hidden", displayOpen || difficultyOpen ? "false" : "true");
+    settingsBackdropEl.setAttribute("aria-hidden", displayOpen || difficultyOpen || lessonOpen ? "false" : "true");
   }
   if (displaySettingsToggleBtn) {
     displaySettingsToggleBtn.setAttribute("aria-expanded", displayOpen ? "true" : "false");
   }
   if (difficultySettingsToggleBtn) {
     difficultySettingsToggleBtn.setAttribute("aria-expanded", difficultyOpen ? "true" : "false");
+  }
+  if (lessonSettingsToggleBtn) {
+    lessonSettingsToggleBtn.setAttribute("aria-expanded", lessonOpen ? "true" : "false");
   }
 }
 
@@ -610,6 +738,81 @@ function applySinkTone() {
   }
 }
 
+function getLessonBucket() {
+  return LESSON_LIBRARY[state.lessonBand] ?? LESSON_LIBRARY["3to5"];
+}
+
+function getSelectedLesson() {
+  const bucket = getLessonBucket();
+  const match = bucket.lessons.find((lesson) => lesson.id === state.lessonId);
+  return match ?? bucket.lessons[0];
+}
+
+function buildBoardChallengeText() {
+  if (state.board.length === 0) {
+    return "Start a puzzle to generate a board-specific challenge.";
+  }
+  const unsolved = state.board.find((cell) => cell.currentAccum !== cell.targetAccum);
+  if (!unsolved) {
+    return "All targets are matched. Start a new puzzle and compare how quickly you can justify each move.";
+  }
+  const delta = unsolved.targetAccum - unsolved.currentAccum;
+  const needed = delta > 0
+    ? `${delta} more`
+    : `${Math.abs(delta)} less`;
+  return `Tile ${unsolved.index} has current ${unsolved.currentAccum} and target ${unsolved.targetAccum}; route flow so it receives ${needed}.`;
+}
+
+function populateLessonSelect() {
+  if (!lessonSelectEl) {
+    return;
+  }
+  const bucket = getLessonBucket();
+  lessonSelectEl.replaceChildren();
+  for (const lesson of bucket.lessons) {
+    const option = document.createElement("option");
+    option.value = lesson.id;
+    option.textContent = lesson.title;
+    lessonSelectEl.appendChild(option);
+  }
+  if (!bucket.lessons.some((lesson) => lesson.id === state.lessonId)) {
+    state.lessonId = bucket.lessons[0].id;
+  }
+  lessonSelectEl.value = state.lessonId;
+}
+
+function rotateQuickCheck() {
+  const bucket = getLessonBucket();
+  const checks = bucket.quickChecks;
+  if (!lessonQuickCheckTextEl || checks.length === 0) {
+    return;
+  }
+  const index = lessonQuickCheckCursor % checks.length;
+  lessonQuickCheckTextEl.textContent = checks[index];
+  lessonQuickCheckCursor += 1;
+}
+
+function renderLessonStudio() {
+  if (!lessonBandSelectEl || !lessonFocusTextEl) {
+    return;
+  }
+  lessonBandSelectEl.value = state.lessonBand;
+  const lesson = getSelectedLesson();
+  if (lessonTaskTextEl) {
+    lessonTaskTextEl.textContent = lesson.task;
+  }
+  lessonFocusTextEl.textContent = lesson.focus;
+  if (lessonTeacherPromptTextEl) {
+    lessonTeacherPromptTextEl.textContent = lesson.teacherPrompt;
+  }
+  if (lessonReflectionTextEl) {
+    lessonReflectionTextEl.textContent = lesson.reflection;
+  }
+  if (lessonChallengeTextEl) {
+    lessonChallengeTextEl.textContent = buildBoardChallengeText();
+  }
+}
+
 function applyAnimationSpeed() {
   if (animationSpeedValueEl) {
     animationSpeedValueEl.textContent = `${state.animationSpeed}ms`;
@@ -782,6 +985,31 @@ if (sinkToneSliderEl) {
   });
 }
 
+if (lessonBandSelectEl) {
+  lessonBandSelectEl.addEventListener("change", () => {
+    state.lessonBand = lessonBandSelectEl.value;
+    const firstLesson = getLessonBucket().lessons[0];
+    state.lessonId = firstLesson.id;
+    lessonQuickCheckCursor = 0;
+    populateLessonSelect();
+    rotateQuickCheck();
+    renderLessonStudio();
+  });
+}
+
+if (lessonSelectEl) {
+  lessonSelectEl.addEventListener("change", () => {
+    state.lessonId = lessonSelectEl.value;
+    renderLessonStudio();
+  });
+}
+
+if (lessonPromptBtn) {
+  lessonPromptBtn.addEventListener("click", () => {
+    rotateQuickCheck();
+  });
+}
+
 if (paletteSelectEl) {
   paletteSelectEl.addEventListener("change", () => {
     state.colorPalette = paletteSelectEl.value;
@@ -832,6 +1060,13 @@ if (difficultySettingsToggleBtn) {
   });
 }
 
+if (lessonSettingsToggleBtn) {
+  lessonSettingsToggleBtn.addEventListener("click", () => {
+    const shouldOpen = !document.body.classList.contains("lesson-settings-open");
+    setSettingsDrawerOpen("lesson", shouldOpen);
+  });
+}
+
 if (displaySettingsCloseBtn) {
   displaySettingsCloseBtn.addEventListener("click", () => {
     setSettingsDrawerOpen("display", false);
@@ -844,20 +1079,32 @@ if (difficultySettingsCloseBtn) {
   });
 }
 
+if (lessonSettingsCloseBtn) {
+  lessonSettingsCloseBtn.addEventListener("click", () => {
+    setSettingsDrawerOpen("lesson", false);
+  });
+}
+
 if (settingsBackdropEl) {
   settingsBackdropEl.addEventListener("click", () => {
     setSettingsDrawerOpen("display", false);
     setSettingsDrawerOpen("difficulty", false);
+    setSettingsDrawerOpen("lesson", false);
   });
 }
 
 window.addEventListener("keydown", (event) => {
   if (
     event.key === "Escape"
-    && (document.body.classList.contains("display-settings-open") || document.body.classList.contains("difficulty-settings-open"))
+    && (
+      document.body.classList.contains("display-settings-open")
+      || document.body.classList.contains("difficulty-settings-open")
+      || document.body.classList.contains("lesson-settings-open")
+    )
   ) {
     setSettingsDrawerOpen("display", false);
     setSettingsDrawerOpen("difficulty", false);
+    setSettingsDrawerOpen("lesson", false);
   }
 });
 
@@ -1493,6 +1740,8 @@ function updateStatus() {
     const remaining = state.board.filter((c) => c.currentAccum !== c.targetAccum).length;
     statusTextEl.textContent = `${remaining} tiles still mismatched.`;
   }
+
+  renderLessonStudio();
 }
 
 function renderBoard() {
@@ -1672,6 +1921,9 @@ applyBaseTileAccumulationMode();
 applyRotatableHintsMode();
 applyValueBadgeMode();
 applyViewMode();
+populateLessonSelect();
+rotateQuickCheck();
+renderLessonStudio();
 window.addEventListener("mousemove", (event) => {
   state.lastPointerClientX = event.clientX;
   state.lastPointerClientY = event.clientY;

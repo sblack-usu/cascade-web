@@ -20,6 +20,7 @@
         <button id="helpToggleBtn" type="button" aria-expanded="false" aria-controls="helpSections">Help</button>
         <button id="displaySettingsToggleBtn" type="button">Display</button>
         <button id="difficultySettingsToggleBtn" type="button">Difficulty</button>
+        <button id="lessonSettingsToggleBtn" type="button">Lessons</button>
         <button id="postWinNewGameBtn" type="button">New Game</button>
       </div>
     </header>
@@ -102,6 +103,46 @@
         <button id="tileShapeToggleBtn" type="button">Tiles: Squares</button>
         <button id="negativeBaseToggleBtn" type="button">Negative Base Runoff: Off</button>
       </div>
+    </aside>
+
+    <aside id="lessonSettingsModal" class="settings-modal" aria-hidden="true" aria-label="Lesson settings">
+      <header class="settings-header">
+        <h2>Number Sense Lesson Studio</h2>
+        <button id="lessonSettingsCloseBtn" type="button">Close</button>
+      </header>
+
+      <section id="lessonStudio" class="lesson-studio" aria-label="Number Sense Lesson Studio">
+        <header class="lesson-studio-header">
+          <p>Choose a grade band and lesson focus, then use guided prompts while playing.</p>
+        </header>
+
+        <div class="lesson-studio-controls">
+          <label for="lessonBandSelect">
+            Grade Band
+            <select id="lessonBandSelect">
+              <option value="k2">K-2</option>
+              <option value="3to5" selected>Grades 3-5</option>
+              <option value="6plus">Grades 6+</option>
+            </select>
+          </label>
+
+          <label for="lessonSelect">
+            Lesson Focus
+            <select id="lessonSelect"></select>
+          </label>
+
+          <button id="lessonPromptBtn" type="button">New Quick Check</button>
+        </div>
+
+        <section class="lesson-card" aria-live="polite">
+          <p><strong>Math Focus:</strong> <span id="lessonFocusText"></span></p>
+          <p><strong>Gameplay Task:</strong> <span id="lessonTaskText"></span></p>
+          <p><strong>Board Challenge:</strong> <span id="lessonChallengeText"></span></p>
+          <p><strong>Teacher Prompt:</strong> <span id="lessonTeacherPromptText"></span></p>
+          <p><strong>Student Reflection:</strong> <span id="lessonReflectionText"></span></p>
+          <p><strong>Quick Check:</strong> <span id="lessonQuickCheckText"></span></p>
+        </section>
+      </section>
     </aside>
 
     <section id="boardStage" class="board-stage show-arrows">
