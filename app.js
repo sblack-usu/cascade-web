@@ -209,23 +209,20 @@ function animateCurrentValueUpdate(currentEl, delay = 0) {
   currentEl.animate(
     [
       {
-        transform: `translate(-50%, -50%) scale(${baseScale * 0.88})`,
-        opacity: 0.72,
+        transform: `translate(-50%, -50%) scale(${baseScale * 0.96})`,
       },
       {
-        transform: `translate(-50%, -58%) scale(${baseScale * 1.14})`,
-        opacity: 1,
-        offset: 0.45,
+        transform: `translate(-50%, -50%) scale(${baseScale * 1.04})`,
+        offset: 0.5,
       },
       {
         transform: `translate(-50%, -50%) scale(${baseScale})`,
-        opacity: 1,
       },
     ],
     {
-      duration: Math.max(220, state.animationSpeed + 80),
+      duration: Math.max(180, state.animationSpeed + 40),
       delay,
-      easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+      easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
     }
   );
 }
