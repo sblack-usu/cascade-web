@@ -529,7 +529,6 @@ async function copyBoardShareUrl() {
   }
 
   const shareUrl = buildShareUrlFromCurrentBoard();
-  window.history.replaceState({}, "", shareUrl.toString());
   if (shareUrlInputEl) {
     shareUrlInputEl.value = shareUrl.toString();
   }
@@ -548,7 +547,7 @@ async function copyBoardShareUrl() {
     }
   } catch (error) {
     if (shareBoardStatusEl) {
-      shareBoardStatusEl.textContent = "Share URL added to address bar. Copy it from there.";
+      shareBoardStatusEl.textContent = "Could not copy automatically. Use the Share URL field.";
     }
   }
 }
