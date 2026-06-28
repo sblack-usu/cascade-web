@@ -28,13 +28,15 @@ const state = {
 const boardEl = document.getElementById("board");
 const boardStageEl = document.getElementById("boardStage");
 const linkOverlayEl = document.getElementById("linkOverlay");
-const settingsToggleBtn = document.getElementById("settingsToggleBtn");
-const settingsCloseBtn = document.getElementById("settingsCloseBtn");
+const displaySettingsToggleBtn = document.getElementById("displaySettingsToggleBtn");
+const difficultySettingsToggleBtn = document.getElementById("difficultySettingsToggleBtn");
+const displaySettingsCloseBtn = document.getElementById("displaySettingsCloseBtn");
+const difficultySettingsCloseBtn = document.getElementById("difficultySettingsCloseBtn");
 const settingsBackdropEl = document.getElementById("settingsBackdrop");
-const settingsModalEl = document.getElementById("settingsModal");
+const displaySettingsModalEl = document.getElementById("displaySettingsModal");
+const difficultySettingsModalEl = document.getElementById("difficultySettingsModal");
 const statusTextEl = document.getElementById("statusText");
 const movesTextEl = document.getElementById("movesText");
-const newGameBtn = document.getElementById("newGameBtn");
 const postWinNewGameBtn = document.getElementById("postWinNewGameBtn");
 const rotationDirectionToggleBtn = document.getElementById("rotationDirectionToggleBtn");
 const valueBadgeToggleBtn = document.getElementById("valueBadgeToggleBtn");
@@ -66,16 +68,27 @@ document.body.appendChild(rotationCursorEl);
 let flowAudioContext = null;
 let blockedSoundLastAtMs = 0;
 
-function setSettingsModalOpen(isOpen) {
-  document.body.classList.toggle("settings-open", isOpen);
-  if (settingsModalEl) {
-    settingsModalEl.setAttribute("aria-hidden", isOpen ? "false" : "true");
+function setSettingsDrawerOpen(drawerName, isOpen) {
+  const displayOpen = drawerName === "display" ? isOpen : false;
+  const difficultyOpen = drawerName === "difficulty" ? isOpen : false;
+
+  document.body.classList.toggle("display-settings-open", displayOpen);
+  document.body.classList.toggle("difficulty-settings-open", difficultyOpen);
+
+  if (displaySettingsModalEl) {
+    displaySettingsModalEl.setAttribute("aria-hidden", displayOpen ? "false" : "true");
+  }
+  if (difficultySettingsModalEl) {
+    difficultySettingsModalEl.setAttribute("aria-hidden", difficultyOpen ? "false" : "true");
   }
   if (settingsBackdropEl) {
-    settingsBackdropEl.setAttribute("aria-hidden", isOpen ? "false" : "true");
+    settingsBackdropEl.setAttribute("aria-hidden", displayOpen || difficultyOpen ? "false" : "true");
   }
-  if (settingsToggleBtn) {
-    settingsToggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  if (displaySettingsToggleBtn) {
+    displaySettingsToggleBtn.setAttribute("aria-expanded", displayOpen ? "true" : "false");
+  }
+  if (difficultySettingsToggleBtn) {
+    difficultySettingsToggleBtn.setAttribute("aria-expanded", difficultyOpen ? "true" : "false");
   }
 }
 
@@ -609,11 +622,6 @@ function parseGridValue(value) {
   return { cols: 6, rows: 6 };
 }
 
-newGameBtn.addEventListener("click", () => {
-  const grid = parseGridValue(sizeSelect.value);
-  startNewPuzzle(grid.cols, grid.rows);
-});
-
 if (postWinNewGameBtn) {
   postWinNewGameBtn.addEventListener("click", () => {
     const grid = parseGridValue(sizeSelect.value);
@@ -736,24 +744,34 @@ if (tileDelaySliderEl) {
   });
 }
 
-if (settingsToggleBtn) {
-  settingsToggleBtn.addEventListener("click", () => {
-    const shouldOpen = !document.body.classList.contains("settings-open");
-    setSettingsModalOpen(shouldOpen);
+if (displaySettingsToggleBtn) {
+  displaySettingsToggleBtn.addEventListener("click", () => {
+    const shouldOpen = !document.body.classList.contains("display-settings-open");
+    setSettingsDrawerOpen("display", shouldOpen);
   });
 }
 
-if (settingsCloseBtn) {
-  settingsCloseBtn.addEventListener("click", () => setSettingsModalOpen(false));
+if (difficultySettingsToggleBtn) {
+  difficultySettingsToggleBtn.addEventListener("click", () => {
+    const shouldOpen = !document.body.classList.contains("difficulty-settings-open");
+    setSettingsDrawerOpen("difficulty", shouldOpen);
+  });
 }
 
 if (settingsBackdropEl) {
-  settingsBackdropEl.addEventListener("click", () => setSettingsModalOpen(false));
+  settingsBackdropEl.addEventListener("click", () => {
+    setSettingsDrawerOpen("display", false);
+    setSettingsDrawerOpen("difficulty", false);
+  });
 }
 
 window.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && document.body.classList.contains("settings-open")) {
-    setSettingsModalOpen(false);
+  if (
+    event.key === "Escape"
+    && (document.body.classList.contains("display-settings-open") || document.body.classList.contains("difficulty-settings-open"))
+  ) {
+    setSettingsDrawerOpen("display", false);
+    setSettingsDrawerOpen("difficulty", false);
   }
 });
 
@@ -1392,9 +1410,14 @@ function renderBoard() {
   const tileGap = Number.parseFloat(boardStyles.gap || boardStyles.columnGap || "0") || 0;
 
   if (state.tileShape === "hex") {
+    const hexPadding = (Number.parseFloat(boardStyles.paddingTop || "0") || 0)
+      + (Number.parseFloat(boardStyles.paddingBottom || "0") || 0);
     const widthLimit = (2 * stageWidth - (2 * state.cols - 1) * tileGap) / (2 * state.cols + 1);
-    const heightLimit = (stageHeight - (state.rows - 1) * tileGap) / (0.866 * state.rows);
-    state.lockedTileSize = Math.max(56, Math.floor(Math.min(widthLimit, heightLimit) - 2));
+    const hexRowHeight = 1 / 0.866;
+    const rowPitch = 0.866;
+    const heightDenominator = (state.rows - 1) * rowPitch + hexRowHeight;
+    const heightLimit = (stageHeight - hexPadding - (state.rows - 1) * tileGap) / heightDenominator;
+    state.lockedTileSize = Math.max(56, Math.floor(Math.min(widthLimit, heightLimit) - 3));
   } else {
     const widthLimit = (stageWidth - (state.cols - 1) * tileGap) / state.cols;
     const heightLimit = (stageHeight - (state.rows - 1) * tileGap) / state.rows;
