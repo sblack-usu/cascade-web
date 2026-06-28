@@ -778,6 +778,18 @@ if (difficultySettingsToggleBtn) {
   });
 }
 
+if (displaySettingsCloseBtn) {
+  displaySettingsCloseBtn.addEventListener("click", () => {
+    setSettingsDrawerOpen("display", false);
+  });
+}
+
+if (difficultySettingsCloseBtn) {
+  difficultySettingsCloseBtn.addEventListener("click", () => {
+    setSettingsDrawerOpen("difficulty", false);
+  });
+}
+
 if (settingsBackdropEl) {
   settingsBackdropEl.addEventListener("click", () => {
     setSettingsDrawerOpen("display", false);
