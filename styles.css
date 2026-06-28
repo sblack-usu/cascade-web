@@ -550,6 +550,10 @@ input[type="range"]:focus-visible {
   align-items: center;
 }
 
+.board-status {
+  margin-top: 0.1rem;
+}
+
 .dot {
   display: inline-block;
   width: 0.8rem;
