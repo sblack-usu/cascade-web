@@ -30,6 +30,9 @@ const state = {
   board: [],
   moves: 0,
   solved: false,
+  timerActive: false,
+  timerStartAtMs: null,
+  timerElapsedMs: 0,
 };
 
 const boardEl = document.getElementById("board");
@@ -47,6 +50,7 @@ const difficultySettingsModalEl = document.getElementById("difficultySettingsMod
 const lessonSettingsModalEl = document.getElementById("lessonSettingsModal");
 const statusTextEl = document.getElementById("statusText");
 const movesTextEl = document.getElementById("movesText");
+const timerTextEl = document.getElementById("timerText");
 const postWinNewGameBtn = document.getElementById("postWinNewGameBtn");
 const helpToggleBtn = document.getElementById("helpToggleBtn");
 const helpSectionsEl = document.getElementById("helpSections");
@@ -95,6 +99,7 @@ document.body.appendChild(rotationCursorEl);
 let flowAudioContext = null;
 let blockedSoundLastAtMs = 0;
 let lessonQuickCheckCursor = 0;
+let gameTimerIntervalId = null;
 
 const LESSON_LIBRARY = {
   k2: {
@@ -231,6 +236,63 @@ function setSettingsDrawerOpen(drawerName, isOpen) {
   if (lessonSettingsToggleBtn) {
     lessonSettingsToggleBtn.setAttribute("aria-expanded", lessonOpen ? "true" : "false");
   }
+}
+
+function formatTimer(elapsedMs) {
+  const totalSeconds = Math.max(0, Math.floor(elapsedMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function renderTimer() {
+  if (!timerTextEl) {
+    return;
+  }
+  timerTextEl.textContent = `Time: ${formatTimer(state.timerElapsedMs)}`;
+}
+
+function stopGameTimer() {
+  if (state.timerActive && state.timerStartAtMs !== null) {
+    state.timerElapsedMs = Date.now() - state.timerStartAtMs;
+  }
+  state.timerActive = false;
+  state.timerStartAtMs = null;
+  if (gameTimerIntervalId !== null) {
+    window.clearInterval(gameTimerIntervalId);
+    gameTimerIntervalId = null;
+  }
+  renderTimer();
+}
+
+function startGameTimer() {
+  if (state.timerActive || state.solved) {
+    return;
+  }
+  state.timerActive = true;
+  state.timerStartAtMs = Date.now() - state.timerElapsedMs;
+  if (gameTimerIntervalId !== null) {
+    window.clearInterval(gameTimerIntervalId);
+  }
+  gameTimerIntervalId = window.setInterval(() => {
+    if (!state.timerActive || state.timerStartAtMs === null) {
+      return;
+    }
+    state.timerElapsedMs = Date.now() - state.timerStartAtMs;
+    renderTimer();
+  }, 250);
+  renderTimer();
+}
+
+function resetGameTimer() {
+  if (gameTimerIntervalId !== null) {
+    window.clearInterval(gameTimerIntervalId);
+    gameTimerIntervalId = null;
+  }
+  state.timerActive = false;
+  state.timerStartAtMs = null;
+  state.timerElapsedMs = 0;
+  renderTimer();
 }
 
 function getDirectionCount() {
@@ -1660,6 +1722,7 @@ function startNewPuzzle(cols, rows) {
   state.moves = 0;
   state.lastCountedTileIndex = null;
   movesTextEl.textContent = "Moves: 0";
+  resetGameTimer();
 
   const board = [];
   const maxBaseTileAccumulation = Math.max(1, Math.round(state.baseTileAccumulation));
@@ -1799,6 +1862,7 @@ function updateStatus() {
   state.solved = solvedNow;
 
   if (solvedNow && !wasSolved) {
+    stopGameTimer();
     triggerSolvedCelebration();
   }
 
@@ -1971,6 +2035,7 @@ function renderBoard() {
     tile.addEventListener("click", (event) => {
       state.lastPointerClientX = event.clientX;
       state.lastPointerClientY = event.clientY;
+      startGameTimer();
       const clickRotationDirection = getRotationDirectionFromClick(tile, event);
       rotateCell(cell.index, tile, clickRotationDirection);
     });
