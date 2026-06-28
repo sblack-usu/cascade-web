@@ -20,6 +20,7 @@ const state = {
   colorPalette: "coastal",
   helpOpen: false,
   allowNegativeBaseRunoff: false,
+  disallowCrossingFlows: false,
   baseTileAccumulation: 3,
   showRotatableHints: false,
   lastPointerClientX: null,
@@ -81,6 +82,7 @@ const tileShapeToggleBtn = document.getElementById("tileShapeToggleBtn");
 const rotationIconsToggleBtn = document.getElementById("rotationIconsToggleBtn");
 const flowSoundToggleBtn = document.getElementById("flowSoundToggleBtn");
 const negativeBaseToggleBtn = document.getElementById("negativeBaseToggleBtn");
+const crossingFlowToggleBtn = document.getElementById("crossingFlowToggleBtn");
 const rotatableHintsToggleBtn = document.getElementById("rotatableHintsToggleBtn");
 const sizeSelect = document.getElementById("sizeSelect");
 const baseTileAccumulationSliderEl = document.getElementById("baseTileAccumulationSlider");
@@ -659,6 +661,15 @@ function applyNegativeBaseMode() {
     : "Negative Base Runoff: Off";
 }
 
+function applyCrossingFlowMode() {
+  if (!crossingFlowToggleBtn) {
+    return;
+  }
+  crossingFlowToggleBtn.textContent = state.disallowCrossingFlows
+    ? "No Crossing Flows: On"
+    : "No Crossing Flows: Off";
+}
+
 function applyBaseTileAccumulationMode() {
   if (baseTileAccumulationValueEl) {
     baseTileAccumulationValueEl.textContent = String(state.baseTileAccumulation);
@@ -921,6 +932,14 @@ if (negativeBaseToggleBtn) {
   negativeBaseToggleBtn.addEventListener("click", () => {
     state.allowNegativeBaseRunoff = !state.allowNegativeBaseRunoff;
     applyNegativeBaseMode();
+    startNewPuzzle(state.cols, state.rows);
+  });
+}
+
+if (crossingFlowToggleBtn) {
+  crossingFlowToggleBtn.addEventListener("click", () => {
+    state.disallowCrossingFlows = !state.disallowCrossingFlows;
+    applyCrossingFlowMode();
     startNewPuzzle(state.cols, state.rows);
   });
 }
@@ -1332,6 +1351,42 @@ function getLoopTileIndices(board) {
   return loopIndices;
 }
 
+function getCrossingTileIndices(board, useSolutionDirections = false) {
+  const crossings = new Set();
+  if (state.tileShape !== "square") {
+    return crossings;
+  }
+
+  function hasDiagonalFlow(fromIndex, toIndex) {
+    const dir = useSolutionDirections ? board[fromIndex].solutionDir : board[fromIndex].currentDir;
+    if (dir === null) {
+      return false;
+    }
+    return followDirection(state.cols, state.rows, fromIndex, dir) === toIndex;
+  }
+
+  for (let y = 0; y < state.rows - 1; y += 1) {
+    for (let x = 0; x < state.cols - 1; x += 1) {
+      const tl = indexFromXY(state.cols, x, y);
+      const tr = indexFromXY(state.cols, x + 1, y);
+      const bl = indexFromXY(state.cols, x, y + 1);
+      const br = indexFromXY(state.cols, x + 1, y + 1);
+
+      const diagA = hasDiagonalFlow(tl, br) || hasDiagonalFlow(br, tl);
+      const diagB = hasDiagonalFlow(tr, bl) || hasDiagonalFlow(bl, tr);
+
+      if (diagA && diagB) {
+        crossings.add(tl);
+        crossings.add(tr);
+        crossings.add(bl);
+        crossings.add(br);
+      }
+    }
+  }
+
+  return crossings;
+}
+
 function shuffledDirections() {
   const dirs = Array.from({ length: getDirectionCount() }, (_, i) => i);
   for (let i = dirs.length - 1; i > 0; i -= 1) {
@@ -1606,7 +1661,6 @@ function startNewPuzzle(cols, rows) {
   state.lastCountedTileIndex = null;
   movesTextEl.textContent = "Moves: 0";
 
-  const elev = makeElevation(cols, rows);
   const board = [];
   const maxBaseTileAccumulation = Math.max(1, Math.round(state.baseTileAccumulation));
   const positiveBaseValues = Array.from({ length: maxBaseTileAccumulation }, (_, index) => index + 1);
@@ -1617,18 +1671,27 @@ function startNewPuzzle(cols, rows) {
     }
   }
 
-  for (let i = 0; i < cols * rows; i += 1) {
-    const pool = state.allowNegativeBaseRunoff ? signedBaseValues : positiveBaseValues;
-    const baseFlow = pool[Math.floor(Math.random() * pool.length)];
-    const solutionDir = chooseSolutionDirection(cols, rows, elev, i);
-    board.push({
-      index: i,
-      baseFlow,
-      solutionDir,
-      currentDir: solutionDir,
-      targetAccum: 0,
-      currentAccum: 0,
-    });
+  const maxAttempts = state.disallowCrossingFlows ? 48 : 1;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    board.length = 0;
+    const elev = makeElevation(cols, rows);
+    for (let i = 0; i < cols * rows; i += 1) {
+      const pool = state.allowNegativeBaseRunoff ? signedBaseValues : positiveBaseValues;
+      const baseFlow = pool[Math.floor(Math.random() * pool.length)];
+      const solutionDir = chooseSolutionDirection(cols, rows, elev, i);
+      board.push({
+        index: i,
+        baseFlow,
+        solutionDir,
+        currentDir: solutionDir,
+        targetAccum: 0,
+        currentAccum: 0,
+      });
+    }
+
+    if (!state.disallowCrossingFlows || getCrossingTileIndices(board, true).size === 0) {
+      break;
+    }
   }
 
   const target = accumulate(board, true);
@@ -1722,6 +1785,11 @@ function isSolved() {
       return false;
     }
   }
+
+  if (state.disallowCrossingFlows && getCrossingTileIndices(state.board).size > 0) {
+    return false;
+  }
+
   return true;
 }
 
@@ -1738,7 +1806,14 @@ function updateStatus() {
     statusTextEl.textContent = `Solved in ${state.moves} moves. New Puzzle for another watershed.`;
   } else {
     const remaining = state.board.filter((c) => c.currentAccum !== c.targetAccum).length;
-    statusTextEl.textContent = `${remaining} tiles still mismatched.`;
+    const crossingCount = state.disallowCrossingFlows ? getCrossingTileIndices(state.board).size : 0;
+    if (remaining === 0 && crossingCount > 0) {
+      statusTextEl.textContent = `Crossing flows detected on ${crossingCount} tiles. Remove crossings to finish.`;
+    } else if (crossingCount > 0) {
+      statusTextEl.textContent = `${remaining} tiles mismatched and crossing flows detected.`;
+    } else {
+      statusTextEl.textContent = `${remaining} tiles still mismatched.`;
+    }
   }
 
   renderLessonStudio();
@@ -1790,7 +1865,13 @@ function renderBoard() {
 
   applyArrowScale();
 
-  const loopTileIndices = getLoopTileIndices(state.board);
+  const highlightedInvalidTiles = getLoopTileIndices(state.board);
+  if (state.disallowCrossingFlows) {
+    const crossingTiles = getCrossingTileIndices(state.board);
+    for (const index of crossingTiles) {
+      highlightedInvalidTiles.add(index);
+    }
+  }
 
   const frag = document.createDocumentFragment();
   for (const cell of state.board) {
@@ -1801,7 +1882,7 @@ function renderBoard() {
     if (cell.currentDir === null) {
       tile.classList.add("sink");
     }
-    if (loopTileIndices.has(cell.index)) {
+    if (highlightedInvalidTiles.has(cell.index)) {
       tile.classList.add("loop");
     }
     if (cell.solutionDir === null) {
@@ -1917,6 +1998,7 @@ applyFlowSoundMode();
 applyHelpVisibility();
 applyColorPalette();
 applyNegativeBaseMode();
+applyCrossingFlowMode();
 applyBaseTileAccumulationMode();
 applyRotatableHintsMode();
 applyValueBadgeMode();
