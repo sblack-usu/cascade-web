@@ -15,6 +15,7 @@ const state = {
   useRotationIcons: false,
   useFlowSound: true,
   allowNegativeBaseRunoff: false,
+  baseTileAccumulation: 3,
   showRotatableHints: false,
   lastPointerClientX: null,
   lastPointerClientY: null,
@@ -60,6 +61,8 @@ const flowSoundToggleBtn = document.getElementById("flowSoundToggleBtn");
 const negativeBaseToggleBtn = document.getElementById("negativeBaseToggleBtn");
 const rotatableHintsToggleBtn = document.getElementById("rotatableHintsToggleBtn");
 const sizeSelect = document.getElementById("sizeSelect");
+const baseTileAccumulationSliderEl = document.getElementById("baseTileAccumulationSlider");
+const baseTileAccumulationValueEl = document.getElementById("baseTileAccumulationValue");
 const SQUARE_DIR_DEGREES = [0, -45, -90, -135, 180, 135, 90, 45];
 const HEX_DIR_DEGREES = [0, -60, -120, 180, 120, 60];
 const rotationCursorEl = document.createElement("div");
@@ -506,6 +509,15 @@ function applyNegativeBaseMode() {
     : "Negative Base Runoff: Off";
 }
 
+function applyBaseTileAccumulationMode() {
+  if (baseTileAccumulationValueEl) {
+    baseTileAccumulationValueEl.textContent = String(state.baseTileAccumulation);
+  }
+  if (baseTileAccumulationSliderEl) {
+    baseTileAccumulationSliderEl.value = String(state.baseTileAccumulation);
+  }
+}
+
 function applyRotatableHintsMode() {
   if (!rotatableHintsToggleBtn) {
     return;
@@ -741,6 +753,14 @@ if (tileDelaySliderEl) {
   tileDelaySliderEl.addEventListener("input", () => {
     state.tileDelay = Number(tileDelaySliderEl.value);
     applyTileDelay();
+  });
+}
+
+if (baseTileAccumulationSliderEl) {
+  baseTileAccumulationSliderEl.addEventListener("input", () => {
+    state.baseTileAccumulation = Number(baseTileAccumulationSliderEl.value);
+    applyBaseTileAccumulationMode();
+    startNewPuzzle(state.cols, state.rows);
   });
 }
 
@@ -1275,8 +1295,14 @@ function startNewPuzzle(cols, rows) {
 
   const elev = makeElevation(cols, rows);
   const board = [];
-  const positiveBaseValues = [1, 2, 3];
-  const signedBaseValues = [-2, -1, 1, 2, 3];
+  const maxBaseTileAccumulation = Math.max(1, Math.round(state.baseTileAccumulation));
+  const positiveBaseValues = Array.from({ length: maxBaseTileAccumulation }, (_, index) => index + 1);
+  const signedBaseValues = [];
+  for (let value = -maxBaseTileAccumulation; value <= maxBaseTileAccumulation; value += 1) {
+    if (value !== 0) {
+      signedBaseValues.push(value);
+    }
+  }
 
   for (let i = 0; i < cols * rows; i += 1) {
     const pool = state.allowNegativeBaseRunoff ? signedBaseValues : positiveBaseValues;
@@ -1570,6 +1596,7 @@ applyRotationDirection();
 applyRotationIconsMode();
 applyFlowSoundMode();
 applyNegativeBaseMode();
+applyBaseTileAccumulationMode();
 applyRotatableHintsMode();
 applyValueBadgeMode();
 applyViewMode();
